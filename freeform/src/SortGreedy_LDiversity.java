@@ -11,14 +11,15 @@ public class SortGreedy_LDiversity {
 	private static final boolean MIXED = true;
 	//private static final boolean OPTIMIZATION = true;
 	private static double maxCost = BIG;//0.5436267458828434;
-	static byte[] cardinalities = {79, 2, 17, 6, 9, 10, 83, 51};
+	//static byte[] cardinalities = {79, 2, 17, 6, 9, 10, 83, 51};//census
+	static byte[] cardinalities ={10,6,6,10,41};//Coil2000
 	//static byte[] cardinalities ={15,2};
 	//***l*div***//
 	//static int k;// = 10;
 	static int l_param;// = 10;
 	static int SA;// 0 - 7.
 	//***l*div***//
-	static int dims = 8; //3
+	static int dims = 5; //3
 	static int tuples;// = 10000;
 	static int bucket_size;//=100;
 	static int partition_size;//size of bucket partitions.
