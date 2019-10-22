@@ -4,7 +4,7 @@ import java.io.FileWriter;
 
 
 /*includes the reading of tuples and their assignment into buckets*/
-public class Greedy_BLikeness_coil {
+public class Greedy_BLikeness_adult {
 
 	private static final double BIG = Double.MAX_VALUE;
 	private static final boolean RANGE = false;
@@ -12,13 +12,13 @@ public class Greedy_BLikeness_coil {
 	//private static final boolean OPTIMIZATION = true;
 	private static double maxCost = BIG;//0.5436267458828434;
 	//static byte[] cardinalities = {79, 2, 17, 6, 9, 10, 83, 51};//census
-	static byte[] cardinalities ={10,6,6,10,41};//Coil2000
+	static byte[] cardinalities ={74,8, 16, 7, 6, 5, 2, 41, 13};//adult
 	//***b*like***//
 	//static int k;// = 10;
 	static double b_param;// = 10;
 	static int SA;// 0 - 7.
 	//***b*like***//
-	static int dims = 5; //3
+	static int dims = 9; //3
 	static int tuples;// = 10000;
 	static int origTuples;// = tuples;
 	static int bucket_size;//c;

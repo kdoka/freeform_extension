@@ -4,7 +4,7 @@ import java.io.FileWriter;
 
 
 /*includes the reading of tuples and their assignment into buckets*/
-public class Greedy_BLikeness_coil {
+public class SortGreedy_BLikeness_adult {
 
 	private static final double BIG = Double.MAX_VALUE;
 	private static final boolean RANGE = false;
@@ -12,13 +12,13 @@ public class Greedy_BLikeness_coil {
 	//private static final boolean OPTIMIZATION = true;
 	private static double maxCost = BIG;//0.5436267458828434;
 	//static byte[] cardinalities = {79, 2, 17, 6, 9, 10, 83, 51};//census
-	static byte[] cardinalities ={10,6,6,10,41};//Coil2000
+	static byte[] cardinalities ={74,8, 16, 7, 6, 5, 2, 41, 13};//adult
 	//***b*like***//
 	//static int k;// = 10;
 	static double b_param;// = 10;
 	static int SA;// 0 - 7.
 	//***b*like***//
-	static int dims = 5; //3
+	static int dims = 9; //3
 	static int tuples;// = 10000;
 	static int origTuples;// = tuples;
 	static int bucket_size;//c;
@@ -39,44 +39,117 @@ public class Greedy_BLikeness_coil {
 	static int[][] final_assignment;// = new int[tuples][k];
 	static LinkedList<Integer> chunk_sizes = new LinkedList<Integer>();
 	static HeapNode[] edges;
+	static int edge_size;
+	static double threshold;
 
 	//*******************************************//
 	//METHODS THAT PERFORM ARRAY-PROCESSING TASKS//
 	//*******************************************//
 
-	private static int[] greedyAssign(double[][] array, int[] assignment, int assign_size) {
-		int[] matchOrder = new int[assign_size];
-		//int[] iToj = new int[assign_size];
-		int[] jToi = new int[assign_size];
-		int index = 0;
+	private static int[] greedyAssign(double[][] array, int[] assignment, int chunk_size) {
+
+		int[] jToi = new int[chunk_size];
 		Arrays.fill(assignment, -1);
 		Arrays.fill(jToi, -1);
-		for (int i=0; i<edges.length; i++){
+		for (int i=0; i<edge_size; i++){
 			HeapNode node = (HeapNode) edges[i];
-			/*if (node.getI() == 906)
-			 System.out.println(node.getJ());*/
 			if (assignment[node.getI()]==-1 && jToi[node.getJ()]==-1){
-				if (node.getCost()!= BIG){
-					assignment[node.getI()]=node.getJ();
-					jToi[node.getJ()]=node.getI();
-					matchOrder[index++]=node.getI();
-				}else{
-					for (int l=index-1; l>=0; l--){
-						if (array[matchOrder[l]][node.getJ()]!=BIG && array[node.getI()][assignment[matchOrder[l]]]!=BIG){
-							assignment[node.getI()]=assignment[matchOrder[l]];
-							assignment[matchOrder[l]]=node.getJ();
-							jToi[node.getJ()]=matchOrder[l];
-							jToi[assignment[node.getI()]]=node.getI();
-							matchOrder[index++]=node.getI();
-							break;
+				assignment[node.getI()]=node.getJ();
+				jToi[node.getJ()]=node.getI();
+			}
+		}
+		//long backtrace_start = System.currentTimeMillis();
+		for (int index = 0; index<chunk_size; index++){
+			boolean swap_done = false;
+			if (assignment[index]==-1){
+				System.out.println(index);
+				for (int step=1; step<chunk_size/2; step++){
+					int possible_i = (chunk_size+index-step)%chunk_size;
+					int possible_j = assignment[possible_i];
+					if (possible_j != -1){
+						if (array[index][possible_j]!=BIG){
+							for (int l=0; l<chunk_size; l++){
+								if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+									assignment[index]=possible_j;
+									assignment[possible_i]=l;
+									jToi[l]=possible_i;
+									jToi[possible_j]=index;
+									swap_done = true;
+									break;
+								}
+							}
+							/*for (int step2 = 1; step2<chunk_size/2; step2++){
+							 int l = (chunk_size+possible_j-step2)%chunk_size;
+
+							 if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+							 assignment[index]=possible_j;
+							 assignment[possible_i]=l;
+							 jToi[l]=possible_i;
+							 jToi[possible_j]=index;
+							 swap_done = true;
+							 break;
+							 }
+
+							 l=(possible_j+step2)%chunk_size;
+							 if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+							 assignment[index]=possible_j;
+							 assignment[possible_i]=l;
+							 jToi[l]=possible_i;
+							 jToi[possible_j]=index;
+							 swap_done = true;
+							 break;
+							 }
+							 }	*/
 						}
-
 					}
+					if (swap_done)
+						break;
+					else {
+						possible_i = (index+step)%chunk_size;
+						possible_j = assignment[possible_i];
+						if (possible_j != -1){
+							if (array[index][possible_j]!=BIG){
+								for (int l=0; l<chunk_size; l++){
+									if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+										assignment[index]=possible_j;
+										assignment[possible_i]=l;
+										jToi[l]=possible_i;
+										jToi[possible_j]=index;
+										swap_done = true;
+										break;
+									}
+								}
+								/*for (int step2 = 1; step2<chunk_size/2; step2++){
+								 int l = (chunk_size+possible_j-step2)%chunk_size;
 
+								 if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+								 assignment[index]=possible_j;
+								 assignment[possible_i]=l;
+								 jToi[l]=possible_i;
+								 jToi[possible_j]=index;
+								 swap_done = true;
+								 break;
+								 }
+
+								 l=(possible_j+step2)%chunk_size;
+								 if (jToi[l]==-1 && array[possible_i][l]!=BIG){
+								 assignment[index]=possible_j;
+								 assignment[possible_i]=l;
+								 jToi[l]=possible_i;
+								 jToi[possible_j]=index;
+								 swap_done = true;
+								 break;
+								 }
+								 }*/
+							}
+						}
+					}
+					if (swap_done)
+						break;
 				}
 			}
-
 		}
+
 		return assignment;
 	}
 
@@ -85,19 +158,21 @@ public class Greedy_BLikeness_coil {
 	//*******************************************//
 
 	public static void dimension_sort() { // sort the dimensions according to their effect to GCP
-		for (int i = 0;i < dims;i++) {
+		for (int i = 0;i < dims-1;i++) {
 			dimension[i] = (byte) i;
 		}
-		for (int i = 0; i < dims; i++) { // small domain, use bubble sort
-			if (i != SA){ //sort all except SA!!!
-				for (int j = 0; j < dims-i-1;j++) { // smaller range, put it the front
-					if (j != SA){ //sort all except SA!!!
-						if (cardinalities[dimension[j]] > cardinalities[dimension[j+1]]) {
-							byte temp = dimension[j];
-							dimension[j] = dimension[j+1];
-							dimension[j+1] = temp;
-						}
-					}
+		boolean swapped = true;
+		int i=0;
+		byte temp;
+		while (swapped) {
+			swapped = false;
+			i++;
+			for (int j = 0; j < dimension.length-i;j++) { // smaller range, put it the front
+				if (cardinalities[dimension[j]] > cardinalities[dimension[j+1]]) {
+					temp = dimension[j];
+					dimension[j] = dimension[j+1];
+					dimension[j+1] = temp;
+					swapped = true;
 				}
 			}
 		}
@@ -106,7 +181,7 @@ public class Greedy_BLikeness_coil {
 	// return true if data x > data y
 	public static boolean compare_data(short[] x, short[] y) {
 		for (int i = 0;i < dims;i++) {
-			if (i != SA){ //compare w.r.t. all except SA!!!
+			if (i != dims-1){ //compare w.r.t. all except SA!!!
 				if (x[dimension[i]] > y[dimension[i]]) {
 					/*if (map[x][dimension[0]]<map[y][dimension[0]])
 					 System.out.println("oops");*/
@@ -345,7 +420,6 @@ public class Greedy_BLikeness_coil {
 			buckets[b] = tmpBucket;
 		}
 	}
-	
 	static String rangeQueries_random(double s, int lambda, double[][] rs, int times, double[] errArray){
 		double error = 0.0;
 		double absError=0.0;
@@ -633,7 +707,6 @@ public class Greedy_BLikeness_coil {
 	}
 
 
-
 	//***********//
 	//MAIN METHOD//
 	//***********//
@@ -641,17 +714,18 @@ public class Greedy_BLikeness_coil {
 	public static void main(String[] args) 	{
 
 		if (args.length!=7){
-			System.out.println("\nUsage:   java Greedy_BLikeness inFile n d SA beta part_size part_option");
+			System.out.println("\nUsage:   java SortGreedy_BLikeness inFile n SA beta part_size part_option q");
 			System.out.println("\t inFile: input file name (path included).");
 			System.out.println("\t n: number of tuples in inFile.");
 			//System.out.println("\t d: dimensionality of the dataset.");
 			System.out.println("\t SA: index of sensitive attribute [0 -- d-1].");
-			System.out.println("\t beta: B-likeness parameter.");
+			System.out.println("\t l: beta: B-likeness parameter.");
 			System.out.println("\t part_size: size of the bucket partitions.");
 			System.out.println("\t part_option: 0 (safer, keeps all SAs distributions), or");
 			System.out.println("\t              1 (better utility, but may cause problems), or ");
 			System.out.println("\t              2 (no bucket partitioning).\n");
 			System.out.println("\t q: 1 with queries, 0 without\n");
+			//			System.out.println("\t th: distance threshold to place chunk in bucket, in [0, 1].");
 			return;
 		}
 
@@ -663,8 +737,8 @@ public class Greedy_BLikeness_coil {
 		partition_size = Integer.parseInt(args[4]);
 		partition_function = Integer.parseInt(args[5]);
 		q = Boolean.parseBoolean(args[6]);
+		//		threshold = Double.parseDouble(args[7]);
 		origTuples = tuples;
-
 
 		/*
 		int modl = (tuples % l_param);
@@ -703,7 +777,7 @@ public class Greedy_BLikeness_coil {
 			//add dummy tuples:
 			for(int i=(tuples-(l_param-modl)); i<tuples; i++){
 				for(int j=0; j<dims; j++){
-					if (j == SA){
+					if (j == dims-1){
 						map[i][j] = -1; //unique SA
 					}else{
 						map[i][j] = 0;
@@ -712,9 +786,8 @@ public class Greedy_BLikeness_coil {
 			}
 		}
 		 */
-
 		long midTime = System.currentTimeMillis();
-
+		dimension_sort();//sort the dimensions
 		LikenessBuckets bk = new LikenessBuckets(b_param, tuples, dims, map, buckets, 0, inputFile);
 		buckets = bk.bucketization(SA);
 		//bk.printBuckets();
@@ -726,11 +799,7 @@ public class Greedy_BLikeness_coil {
 
 		map=null; //delete map
 		System.gc();
-		//-----------------------------------------------------------//		
-		//TopCoderAlgo algo = new TopCoderAlgo();
 
-		//Below enter "max" or "min" to find maximum sum or minimum sum assignment.
-		String sumType = "min";
 
 		bucket_size = bk.bucketSize;//bucket capacity (c).
 		buckNum = bk.buckNum; //number of buckets (|B|).
@@ -740,9 +809,6 @@ public class Greedy_BLikeness_coil {
 
 		final_assignment = new int[tuples][buckNum];
 
-		long matchTime = System.currentTimeMillis();
-		long time_of_hungarian = 0;
-		long start_of_hungarian = 0;
 		double distortion = 0.0;
 		int chunk_size;
 
@@ -766,7 +832,8 @@ public class Greedy_BLikeness_coil {
 				for (int chunk_index=0; chunk_index<chunk_sizes.size(); chunk_index++){
 					chunk_size = chunk_sizes.get(chunk_index);
 
-					edges = new HeapNode[chunk_size*chunk_size*2];
+					//edges = new HeapNode[chunk_size*chunk_size*2];
+					edges = new HeapNode[chunk_size*chunk_size];
 
 					//we need SA, too!
 					if (MIXED){
@@ -786,13 +853,10 @@ public class Greedy_BLikeness_coil {
 					int times = 0;
 
 					while (++times<buckNum){
-						//start_of_hungarian = System.currentTimeMillis();
-						//algo.hungarian(array, assignment);
-						qSort(0, chunk_size*chunk_size-1);
-						greedyAssign(array, assignment, chunk_size);//Call Hungarian algorithm.
-						//time_of_hungarian+=(System.currentTimeMillis() - start_of_hungarian);
+						//qSort(0, chunk_size*chunk_size-1);
+						qSort(0, edge_size-1);
+						greedyAssign(array, assignment, chunk_size);//Call SortGreedy algorithm.
 
-						//System.out.println("time "+times);
 						for (int i=0; i<assignment.length; i++){
 							final_assignment[i+chunk_offset+bucket_index*bucket_size][times] = bucketToIndexMapping((bucket_index+times)%buckNum,(chunk_offset+assignment[i]));
 							if (MIXED){
@@ -822,8 +886,8 @@ public class Greedy_BLikeness_coil {
 		}else{ //No partitioning:
 			for (int bucket_index=0; bucket_index<buckNum; bucket_index++){
 
-				edges = new HeapNode[bucket_size*bucket_size*2];
-
+				//edges = new HeapNode[bucket_size*bucket_size*2];
+				edges = new HeapNode[bucket_size*bucket_size];
 				//we need SA, too!
 				if (MIXED){
 					MinMaxPerAssign = new int[bucket_size][dims-1][2];
@@ -843,13 +907,10 @@ public class Greedy_BLikeness_coil {
 				int times = 0;
 
 				while (++times<buckNum){
-					//start_of_hungarian = System.currentTimeMillis();
-					//algo.hungarian(array, assignment);
-					qSort(0, bucket_size*bucket_size-1);
-					greedyAssign(array, assignment, bucket_size);//Call Hungarian algorithm.
-					//time_of_hungarian+=(System.currentTimeMillis() - start_of_hungarian);
+					//qSort(0, bucket_size*bucket_size-1);
+					qSort(0, edge_size-1);
+					greedyAssign(array, assignment, bucket_size);//Call SortGreedy algorithm.
 
-					//System.out.println("time "+times);
 					for (int i=0; i<assignment.length; i++){
 						final_assignment[i+bucket_index*bucket_size][times] = bucketToIndexMapping((bucket_index+times)%buckNum, assignment[i]);
 						if (MIXED){
@@ -899,7 +960,7 @@ public class Greedy_BLikeness_coil {
 		//Save Results:
 		FileWriter fw = null;
 		try{
-			fw = new FileWriter("./GreedyResults.txt",true); //true == append
+			fw = new FileWriter("./SortGreedyResults.txt",true); //true == append
 			fw.write(origTuples+" "+b_param+" ");
 			if((partition_function == 0) || (partition_function == 1)){
 				fw.write(partition_size+" ");
@@ -914,7 +975,7 @@ public class Greedy_BLikeness_coil {
 			try{
 				if(fw != null) fw.close();
 			}catch(Exception e){
-				System.err.println(e.getMessage());
+				//ignore.
 			}
 		}
 		if (!q){
@@ -925,7 +986,7 @@ public class Greedy_BLikeness_coil {
 			try{
 				int qtimes = 1000; //numer of random queries.
 				double[] errArray = new double[qtimes];
-				qw = new FileWriter("./Greedy_QueryError.txt",true); //true == append
+				qw = new FileWriter("./SortGreedy_QueryError.txt",true); //true == append
 				//qw.write("#tuples beta size lamda sel error\n");
 				/*
 			for (int i=0; i<selectivities.length; i++){
@@ -940,11 +1001,11 @@ public class Greedy_BLikeness_coil {
 				 */
 				//sel=0.1
 				double[][] tmpres = new double[dims][2];
-				
+
 				System.out.println("Vary lambda (sel=0.1): ");
 				for (int l=1; l<dims; l++){
 					qw.write(origTuples+" "+b_param+" "+bucket_size+" "+
-							 l+" "+selectivities[1]+" ");
+							l+" "+selectivities[1]+" ");
 					for (int qi=0; qi<dims; qi++){ //INITIALIZATION:
 						tmpres[qi][0] = (double)MinMaxPerAttribute[qi][0]-1;//<min SA value.
 						tmpres[qi][1] = (double)MinMaxPerAttribute[qi][1]+1;//>max SA value
@@ -959,7 +1020,7 @@ public class Greedy_BLikeness_coil {
 				int l=3; //lambda = 3 first QIs.
 				for (int i=0; i<selectivities.length; i++){
 					qw.write(origTuples+" "+b_param+" "+bucket_size+" "+
-							 l+" "+selectivities[i]+" ");
+							l+" "+selectivities[i]+" ");
 					for (int qi=0; qi<dims; qi++){ //INITIALIZATION:
 						tmpres[qi][0] = (double)MinMaxPerAttribute[qi][0]-1;//<min SA value.
 						tmpres[qi][1] = (double)MinMaxPerAttribute[qi][1]+1;//>max SA value
@@ -982,10 +1043,8 @@ public class Greedy_BLikeness_coil {
 		}
 
 	}
-
-
 	private static double[][] computeCostMatrix(short[][] in1, short[][] in2, int offset, int first, int size) {
-		int index = 0;
+		edge_size = 0;
 
 		double[][] cost = new double[size][size];
 		for (int i=0; i<size; i++){
@@ -1004,20 +1063,17 @@ public class Greedy_BLikeness_coil {
 					cost[i][j]=BIG;
 				}
 				HeapNode hn = new HeapNode(i,j,c);
-				HeapNode hn2 = new HeapNode(j,i,c);
-				edges[index++]=hn;
-				edges[index++]=hn2;
+				edges[edge_size++]=hn;
+
 			}
 			final_assignment[offset+first+i][0]= offset+first+i;
 			if (MIXED){
 				for (int l=0; l<dims; l++){
-					
-						LinkedList<Integer> list = new LinkedList<Integer>();
-						if (in1[first+i][l] != -1){ //dummy
-							list.add((int) in1[first+i][l]);
-						}
-						distinctValuesPerAssign[i][l] = list;
-					
+					LinkedList<Integer> list = new LinkedList<Integer>();
+					if (in1[first+i][l] != -1){ //dummy
+						list.add((int) in1[first+i][l]);
+					}
+					distinctValuesPerAssign[i][l] = list;
 				}
 			}else{
 				if (RANGE){
@@ -1027,7 +1083,7 @@ public class Greedy_BLikeness_coil {
 					}
 					LinkedList<Integer> list = new LinkedList<Integer>();
 					//if (in1[first+i][SA-1] != -1){ //dummy
-					list.add((int) in1[first+i][SA]);
+					list.add((int) in1[first+i][dims-1]);
 					//}
 					distinctValues1[i] = list;
 				}else{
@@ -1045,22 +1101,24 @@ public class Greedy_BLikeness_coil {
 	}
 
 	private static void recomputeCostMatrix(double[][] array, int bucket_index, int first, int size) {
+		edge_size=0;
+
 		for (int i=0; i<size; i++){
 			for (int j=0; j<size; j++){
 				if (MIXED){
 					array[i][j]=NCP_mixed(buckets[bucket_index][first+j], MinMaxPerAssign[i],
 							distinctValuesPerAssign[i]);
 					HeapNode hn = new HeapNode(i,j,(array[i][j]));
-					edges[i*size+j]=hn;
+					edges[edge_size++]=hn;
 				}else if (RANGE){
 					array[i][j]=NCP_numerical(buckets[bucket_index][first+j], MinMaxPerAssign[i],
 							distinctValues1[i]);
 					HeapNode hn = new HeapNode(i,j,(array[i][j]));
-					edges[i*size+j]=hn;
+					edges[edge_size++]=hn;
 				}else{
 					array[i][j]=NCP(buckets[bucket_index][first+j], (distinctValuesPerAssign[i]));
 					HeapNode hn = new HeapNode(i,j,(array[i][j]));
-					edges[i*size+j]=hn;
+					edges[edge_size++]=hn;
 				}
 			}
 		}
@@ -1077,12 +1135,12 @@ public class Greedy_BLikeness_coil {
 			if((tuple1[i]==-1)||(tuple2[i]==-1)){ //Beta-likeness dummy tuple.
 				return 0;
 			}
-			
-				if (tuple1[i]==tuple2[i])
-					score+=0;
-				else 
-					score+=(double)(1)/(double)(cardinalities[i]-1);
-			
+
+			if (tuple1[i]==tuple2[i])
+				score+=0;
+			else 
+				score+=(double)(1)/(double)(cardinalities[i]-1);
+
 		}
 		return score;
 	}
@@ -1092,7 +1150,7 @@ public class Greedy_BLikeness_coil {
 		int min;
 		int max;
 
-		LinkedList<Integer> distinctValues2 = distinctValuesPerDim[SA];
+		LinkedList<Integer> distinctValues2 = distinctValuesPerDim[dims-1];
 		//if (distinctValues2.contains((int)tuple[SA])) //Beta-likeness does not require this!.
 		//	return BIG; //inf
 
@@ -1100,20 +1158,19 @@ public class Greedy_BLikeness_coil {
 			if(tuple[i]==-1){ //Beta-likeness dummy tuple.
 				return 0;
 			}
+			LinkedList<Integer> distinctValues = distinctValuesPerDim[i];
+			if (!distinctValues.contains((int)tuple[i])){
+				if(distinctValues.contains(-1))
+					score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1); //dummy
+				else
+					score+=(double)(distinctValues.size())/(double)(cardinalities[i]-1);
+			}else{
+				if(distinctValues.contains(-1))
+					score+=(double)(distinctValues.size()-2)/(double)(cardinalities[i]-1); //dummy
+				else
+					score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1);
+			}
 
-				LinkedList<Integer> distinctValues = distinctValuesPerDim[i];
-				if (!distinctValues.contains((int)tuple[i])){
-					if(distinctValues.contains(-1))
-						score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1); //dummy
-					else
-						score+=(double)(distinctValues.size())/(double)(cardinalities[i]-1);
-				}else{
-					if(distinctValues.contains(-1))
-						score+=(double)(distinctValues.size()-2)/(double)(cardinalities[i]-1); //dummy
-					else
-						score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1);
-				}
-			
 		}
 		return score;
 	}
@@ -1121,10 +1178,10 @@ public class Greedy_BLikeness_coil {
 		double score=0.0;
 
 		for (int i=0; i<dims-1; i++){
-			
-				LinkedList<Integer> distinctValues = distinctValuesPerDim[i];
-				score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1);
-			
+
+			LinkedList<Integer> distinctValues = distinctValuesPerDim[i];
+			score+=(double)(distinctValues.size()-1)/(double)(cardinalities[i]-1);
+
 		}
 		return score;
 	}
@@ -1136,12 +1193,12 @@ public class Greedy_BLikeness_coil {
 			return; //dummy tuple
 		}
 		for (int i=0; i<dims; i++){ //we need SA, too!
-			
-				LinkedList<Integer> distValuesPerDim = dValues[i];
-				if (distValuesPerDim != null)
-					if (!distValuesPerDim.contains((int)newTuple[i]))
-						distValuesPerDim.add((int)newTuple[i]);
-			
+
+			LinkedList<Integer> distValuesPerDim = dValues[i];
+			if (distValuesPerDim != null)
+				if (!distValuesPerDim.contains((int)newTuple[i]))
+					distValuesPerDim.add((int)newTuple[i]);
+
 
 		}
 		return;
@@ -1264,7 +1321,6 @@ public class Greedy_BLikeness_coil {
 		}
 		return score;
 	}
-
 	private static double NCP(LinkedList<Integer>[] distinctValuesPerDim){
 		double score=0.0;
 		for (int i=0; i<dims-1; i++){

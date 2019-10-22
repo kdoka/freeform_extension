@@ -420,8 +420,7 @@ public class SortGreedy_BLikeness_coil {
 			buckets[b] = tmpBucket;
 		}
 	}
-
-	static double rangeQueries(double s, int lambda, double[][] rs, int times, double[] errArray){
+	static String rangeQueries_random(double s, int lambda, double[][] rs, int times, double[] errArray){
 		double error = 0.0;
 		double absError=0.0;
 		double genMx, genMn;
@@ -430,7 +429,7 @@ public class SortGreedy_BLikeness_coil {
 		ArrayList<Integer> attrOptions = new ArrayList<Integer>();
 		ArrayList<Integer> choices = new ArrayList<Integer>();
 		//static final int[] attrNumber = new int[]{0, 1, 2, 3, 4, 5 , 6};
-
+		
 		sele = Math.pow(s, 1.0/((double)lambda+1.0));
 
 		System.out.println("lambda ="+lambda+": ");
@@ -450,9 +449,9 @@ public class SortGreedy_BLikeness_coil {
 			//others:
 			attrOptions.clear();
 			choices.clear();
-			for (int i=0; i<dims-1; i++){ attrOptions.add(i); } //originally
+			for (int i=0; i<SA; i++){ attrOptions.add(i); } //originally
 
-			int temporary = dims-1;
+			int temporary = SA;
 			for (int ch=0; ch<lambda; ch++){
 				int next = new Random().nextInt(temporary);
 				//System.out.println(next+" : "+(attrOptions.get(next)));
@@ -474,19 +473,19 @@ public class SortGreedy_BLikeness_coil {
 				System.exit(0);
 			}
 			System.out.println();
-			 */
+			*/
 			for (int ii=0; ii<lambda; ii++){
 				int i = (int)choices.get(ii);
-				//Categorical:
-				range = (double)Math.round((double)(cardinalities[i]) * sele);
-				if (range < 1.0) range = 1; //select at least 1 value.
-				min = (double)MinMaxPerAttribute[i][0];//min attribute value.
-				//max = (double)MinMaxPerAttribute[i][1] - range;//max attribute value - range.
-				random = new Random().nextDouble();
-				randomPos = (double)Math.round(random * ((double)(cardinalities[i]) * (1.0-sele)));
-				rs[i][0] = min + randomPos;
-				rs[i][1] = rs[i][0] + range;
-
+				 //Categorical:
+					range = (double)Math.round((double)(cardinalities[i]) * sele);
+					if (range < 1.0) range = 1; //select at least 1 value.
+					min = (double)MinMaxPerAttribute[i][0];//min attribute value.
+					//max = (double)MinMaxPerAttribute[i][1] - range;//max attribute value - range.
+					random = new Random().nextDouble();
+					randomPos = (double)Math.round(random * ((double)(cardinalities[i]) * (1.0-sele)));
+					rs[i][0] = min + randomPos;
+					rs[i][1] = rs[i][0] + range;
+				
 			}
 			/*for (int i=0; i<lambda; i++)
 			 System.out.println(i+"s="+s+"sele="+sele+":["+MinMaxPerAttribute[i][0]+","
@@ -501,7 +500,7 @@ public class SortGreedy_BLikeness_coil {
 					int i = (int)choices.get(index);
 					genMx = indexToTupleMapping(final_assignment[j][0])[i];
 					genMn = indexToTupleMapping(final_assignment[j][0])[i];
-
+					
 					for (int bi=0; bi<buckNum; bi++){
 						//Generalization Range:
 						if (final_assignment[j][bi] < origTuples){ //not a dummy:
@@ -518,36 +517,36 @@ public class SortGreedy_BLikeness_coil {
 						genRange = false;
 						//break;
 					}else{ //there is some overlap:
-
-						if ((rs[i][0]<=genMn)&&(genMx<=rs[i][1])){
-							overlap = 1.0;
-						}else{
-							int tempCnt = 0;
-							for (int it=0; it<distVals.length; it++){
-								if((distVals[it]>=rs[i][0])&&(distVals[it]<=rs[i][1]))
-									tempCnt++;
+						//Categorical:
+							if ((rs[i][0]<=genMn)&&(genMx<=rs[i][1])){
+								overlap = 1.0;
+							}else{
+								int tempCnt = 0;
+								for (int it=0; it<distVals.length; it++){
+									if((distVals[it]>=rs[i][0])&&(distVals[it]<=rs[i][1]))
+										tempCnt++;
+								}
+								overlap = ((double)tempCnt) / ((double)distVals.length);
 							}
-							overlap = ((double)tempCnt) / ((double)distVals.length);
-						}
-
+						
 						r = r * overlap;
 						//System.out.println("r="+r);
 					}
-
+					
 					if ((indexToTupleMapping(final_assignment[j][0])[i]<rs[i][0])||
-							(indexToTupleMapping(final_assignment[j][0])[i]>rs[i][1])){
+						(indexToTupleMapping(final_assignment[j][0])[i]>rs[i][1])){
 						//orig out of range:
 						inRange = false;
 						break;
 					}
 				}
-
+				
 				if ((indexToTupleMapping(final_assignment[j][0])[SA]<rs[SA][0])||
-						(indexToTupleMapping(final_assignment[j][0])[SA]>rs[SA][1])){//out of range
+					(indexToTupleMapping(final_assignment[j][0])[SA]>rs[SA][1])){//out of range
 					inRange = false;
 					genRange = false;
 				}
-
+				
 				if (true == inRange){
 					//System.out.println("orig +1 ");
 					cnt++;
@@ -566,25 +565,145 @@ public class SortGreedy_BLikeness_coil {
 			}else{
 				tm--; //repeat.
 			}
-
+			
 		}
 		quickSortArray(0, times-1, errArray);
 		double median = (errArray[(times/2)-1]);
 		System.out.println("query error (sel="+s+", lambda="+lambda+"): mean rel error="
-				+((error/(double)times))+" abs error="+(absError/times)
-				+" median rel error="+median);
+						   +((error/(double)times))+" abs error="+(absError/times)
+						   +" median rel error="+median);
 		System.out.println("min="+errArray[0]+" max="+errArray[times-1]);
-		return median;
 
-		/*
 		 double mean = 0.0;
-		 for (i=0; i<errArray.size(); i++){
+		 for (int i=0; i<errArray.length; i++){
 		 mean += errArray[i];
 		 }
-		 mean = mean / errArray.size();
-		 return mean;
-		 */
+		 mean = mean / errArray.length;
+		 return "mean="+mean+" median="+median;
 
+	}
+
+
+	static String rangeQueries_serial(double s, int lamda, double[][] rs, int times, double[] errArray){
+		double error = 0.0;
+		double absError=0.0;
+		double genMx, genMn;
+		double sele, range, min, max, random, randomPos, r, overlap;
+		int[] distVals = new int[buckNum];
+		
+		for (int tm=0; tm<times; tm++){
+			sele = Math.pow(s, 1.0/((double)lamda+1.0));
+			//SA:
+			range = (double)(MinMaxPerAttribute[SA][1] - MinMaxPerAttribute[SA][0]) * sele;
+			min = (double)MinMaxPerAttribute[SA][0];//min SA value.
+			max = (double)MinMaxPerAttribute[SA][1] - range;//max SA value - range.
+			random = new Random().nextDouble();
+			rs[SA][0] = min + (random * (max-min));
+			rs[SA][1] = rs[SA][0] + range;
+			//others:
+			for (int i=0; i<lamda; i++){
+				//Categorical:
+					range = (double)Math.round((double)(cardinalities[i]) * sele);
+					if (range < 1.0) range = 1; //select at least 1 value.
+					min = (double)MinMaxPerAttribute[i][0];//min attribute value.
+					//max = (double)MinMaxPerAttribute[i][1] - range;//max attribute value - range.
+					random = new Random().nextDouble();
+					randomPos = (double)Math.round(random * ((double)(cardinalities[i]) * (1.0-sele)));
+					rs[i][0] = min + randomPos;
+					rs[i][1] = rs[i][0] + range;
+				
+			}
+			/*for (int i=0; i<lamda; i++)
+			 System.out.println(i+"s="+s+"sele="+sele+":["+MinMaxPerAttribute[i][0]+","
+			 +MinMaxPerAttribute[i][1]+"]"+rs[i][0]+" "+rs[i][1]);
+			 System.out.println(" ");*/
+			double cnt = 0; double anonCnt = 0;
+			for (int j=0; j<final_assignment.length; j++){ //not origTuples!
+				r = 1.0; overlap=1.0;
+				boolean inRange = true;
+				boolean genRange = true;
+				for (int i=0; i<lamda; i++){
+					genMx = indexToTupleMapping(final_assignment[j][0])[i];
+					genMn = indexToTupleMapping(final_assignment[j][0])[i];
+					
+					for (int bi=0; bi<buckNum; bi++){
+						//Generalization Range:
+						if (final_assignment[j][bi] < origTuples){ //not a dummy:
+							distVals[bi] = indexToTupleMapping(final_assignment[j][bi])[i];
+							if (genMx < distVals[bi])
+								genMx = distVals[bi];
+							if ((genMn > distVals[bi]) || (genMn==-1))
+								if (-1 != distVals[bi])
+									genMn = distVals[bi];
+						}
+					}
+					if ((genMx<rs[i][0])||(genMn>rs[i][1])){//gen out of query range.
+						//if (!((genMx<rs[i][1])&&(genMn>rs[i][0]))){//gen not within range.
+						genRange = false;
+						//break;
+					}else{ //there is some overlap:
+						 //Categorical:
+							if ((rs[i][0]<=genMn)&&(genMx<=rs[i][1])){
+								overlap = 1.0;
+							}else{
+								int tempCnt = 0;
+								for (int it=0; it<distVals.length; it++){
+									if((distVals[it]>=rs[i][0])&&(distVals[it]<=rs[i][1]))
+										tempCnt++;
+								}
+								overlap = ((double)tempCnt) / ((double)distVals.length);
+							}
+						
+						r = r * overlap;
+						//System.out.println("r="+r);
+					}
+					
+					if ((indexToTupleMapping(final_assignment[j][0])[i]<rs[i][0])||
+						(indexToTupleMapping(final_assignment[j][0])[i]>rs[i][1])){
+						//orig out of range:
+						inRange = false;
+						break;
+					}
+				}
+				
+				if ((indexToTupleMapping(final_assignment[j][0])[SA]<rs[SA][0])||
+					(indexToTupleMapping(final_assignment[j][0])[SA]>rs[SA][1])){//out of range
+					inRange = false;
+					genRange = false;
+				}
+				
+				if (true == inRange){
+					//System.out.println("orig +1 ");
+					cnt++;
+				}
+				if (true == genRange){
+					//System.out.println("anon +r "+r);
+					anonCnt += r;
+				}
+			}
+			//System.out.println(cnt+" "+anonCnt);
+			if (cnt!=0){
+				//System.out.print(tm+" ");
+				error += (((double)Math.abs(anonCnt - cnt)) / ((double)cnt));
+				absError += (((double)Math.abs(anonCnt - cnt)));
+				errArray[tm] = (((double)Math.abs(anonCnt - cnt)) / ((double)cnt));
+			}else{
+				tm--; //repeat.
+			}
+			
+		}
+		quickSortArray(0, times-1, errArray);
+		double median = (errArray[(times/2)-1]);
+		System.out.println("query error (sel="+s+", lamda="+lamda+"): mean rel error="
+						   +((error/(double)times))+" abs error="+(absError/times)
+						   +" median rel error="+median);
+		System.out.println("min="+errArray[0]+" max="+errArray[times-1]);
+		double mean = 0.0;
+		 for (int i=0; i<errArray.length; i++){
+		 mean += errArray[i];
+		 }
+		 mean = mean / errArray.length;
+		 return "mean="+mean+" median="+median;
 	}
 
 
@@ -862,7 +981,7 @@ public class SortGreedy_BLikeness_coil {
 		if (!q){
 			System.out.println("Range Queries.");
 			double[] selectivities = {0.05, 0.1, 0.15, 0.2, 0.25};
-			double qErr = 0;
+			String qErr = "";
 			FileWriter qw = null;
 			try{
 				int qtimes = 1000; //numer of random queries.
@@ -892,7 +1011,7 @@ public class SortGreedy_BLikeness_coil {
 						tmpres[qi][1] = (double)MinMaxPerAttribute[qi][1]+1;//>max SA value
 					}
 
-					qErr = rangeQueries(selectivities[1], l, tmpres, qtimes, errArray);
+					qErr = rangeQueries_serial(selectivities[1], l, tmpres, qtimes, errArray);
 					qw.write(qErr+" \n");
 				}
 
@@ -907,7 +1026,7 @@ public class SortGreedy_BLikeness_coil {
 						tmpres[qi][1] = (double)MinMaxPerAttribute[qi][1]+1;//>max SA value
 					}
 
-					qErr = rangeQueries(selectivities[i], l, tmpres, qtimes, errArray);
+					qErr = rangeQueries_serial(selectivities[i], l, tmpres, qtimes, errArray);
 					qw.write(qErr+" \n");
 				}
 

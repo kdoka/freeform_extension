@@ -42,7 +42,7 @@ public class CensusParser {
 		String line = dis.readLine();
 		String[] splitLine = line.split(", ");
 		for (int i=0; i<dims;i++){
-			tuple[i]=(short) Integer.parseInt(splitLine[i]);
+			tuple[i]=(short) Integer.parseInt(splitLine[i].trim());
 		}
 		
 		return tuple;
